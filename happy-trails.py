@@ -24,7 +24,6 @@ def students():
     query = ("SELECT * from flask.students;")
     cursor.execute(query)
     print("cursor.description ", cursor.description)
-    #### "<th>First Name</th><th>Last Name</th>"
     headers = ""
     for field in cursor.description:
         column_title = field[0].title().replace("_"," ")
@@ -37,5 +36,4 @@ def students():
 
     cursor.close()
 
-    # rows = "<tr><td>Sam</td><td>Spade</td></tr>"
     return render_template("table.html", table="Students", headers=headers, rows=rows)
