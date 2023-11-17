@@ -37,3 +37,12 @@ def students():
     cursor.close()
 
     return render_template("table.html", table="Students", headers=headers, rows=rows)
+
+# https://stackoverflow.com/questions/14023864/flask-url-route-route-all-other-urls-to-some-function
+# under construction:  pull table name from url
+@app.route('/<first>', methods = ['POST', 'GET'])
+@app.route('/<first>/<path:rest>', methods = ['POST', 'GET'])
+def fallback(first=None, rest=None):
+    print(f'first {first} rest {rest}')
+    cursor = mysql.connection.cursor()
+    query = (f"SELECT * from flask.{first};")
