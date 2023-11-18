@@ -30,10 +30,11 @@ def students():
         column_title = regex_id.sub("ID", column_title)
         headers += f"<th>{column_title}</th>"
     rows = ""
-    for (id, first_name, last_name) in cursor:
-        rows += f"<tr><td>{id}</td><td>{first_name}</td><td>{last_name}</td></tr>"
-        print("<tr><td>{id}</td><td>{first_name}</td><td>{last_name}</td></tr>")
-
+    for fields in cursor:
+        rows += "<tr>"
+        for field in fields:
+            rows += f"<td>{field}</td>"
+        rows += "</tr>"
     cursor.close()
 
     return render_template("table.html", table="Students", headers=headers, rows=rows)
