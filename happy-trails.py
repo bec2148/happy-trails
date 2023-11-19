@@ -15,11 +15,25 @@ mysql = MySQL(app)
 
 @app.route("/")
 def welcome():
-    return render_template("welcome.html", message="Students.")
+    cursor = mysql.connection.cursor()
+    query = ("SELECT table_name from information_schema.tables WHERE table_schema='flask';")
+    cursor.execute(query)
+    headers = ""
+    for field in cursor.description:
+        column_title = field[0].title().replace("_"," ")
+        column_title = regex_id.sub("ID", column_title)
+        headers += f"<th>{column_title}</th>"
+    rows = ""
+    for fields in cursor:
+        rows += "<tr>"
+        for field in fields:
+            rows += f"<td><a href=\"/{field}\">{field}</a></td>"
+        rows += "</tr>"
+    cursor.close()
+    return render_template("table.html", table="Tables", headers=headers, rows=rows)
 
 @app.route("/students")
 def students():
-    #Creating a connection cursor
     cursor = mysql.connection.cursor()
     query = ("SELECT * from flask.students;")
     cursor.execute(query)
