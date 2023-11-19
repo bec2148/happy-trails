@@ -61,3 +61,19 @@ def fallback(first=None, rest=None):
     print(f'first {first} rest {rest}')
     cursor = mysql.connection.cursor()
     query = (f"SELECT * from flask.{first};")
+    cursor.execute(query)
+    print("cursor.description ", cursor.description)
+    headers = ""
+    for field in cursor.description:
+        column_title = field[0].title().replace("_"," ")
+        column_title = regex_id.sub("ID", column_title)
+        headers += f"<th>{column_title}</th>"
+    rows = ""
+    for fields in cursor:
+        rows += "<tr>"
+        for field in fields:
+            rows += f"<td>{field}</td>"
+        rows += "</tr>"
+    cursor.close()
+
+    return render_template("table.html", table=first.title(), headers=headers, rows=rows)
