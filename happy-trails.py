@@ -13,6 +13,26 @@ app.config['MYSQL_PASSWORD'] = 'my-secret-pw'
 app.config['MYSQL_DB'] = 'flask'
 mysql = MySQL(app)
 
+def list(table):
+    cursor = mysql.connection.cursor()
+    query = (f"SELECT * from flask.{table};")
+    cursor.execute(query)
+    print("cursor.description ", cursor.description)
+    headers = ""
+    for field in cursor.description:
+        column_title = field[0].title().replace("_"," ")
+        column_title = regex_id.sub("ID", column_title)
+        headers += f"<th>{column_title}</th>"
+    rows = ""
+    for fields in cursor:
+        rows += "<tr>"
+        for field in fields:
+            rows += f"<td>{field}</td>"
+        rows += "</tr>"
+    cursor.close()
+
+    return render_template("table.html", table=table.title(), headers=headers, rows=rows)
+
 @app.route("/")
 def welcome():
     cursor = mysql.connection.cursor()
@@ -59,21 +79,5 @@ def students():
 @app.route('/<first>/<path:rest>', methods = ['POST', 'GET'])
 def fallback(first=None, rest=None):
     print(f'first {first} rest {rest}')
-    cursor = mysql.connection.cursor()
-    query = (f"SELECT * from flask.{first};")
-    cursor.execute(query)
-    print("cursor.description ", cursor.description)
-    headers = ""
-    for field in cursor.description:
-        column_title = field[0].title().replace("_"," ")
-        column_title = regex_id.sub("ID", column_title)
-        headers += f"<th>{column_title}</th>"
-    rows = ""
-    for fields in cursor:
-        rows += "<tr>"
-        for field in fields:
-            rows += f"<td>{field}</td>"
-        rows += "</tr>"
-    cursor.close()
-
-    return render_template("table.html", table=first.title(), headers=headers, rows=rows)
+    if rest is None:
+        return list(first)
