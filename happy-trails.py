@@ -36,7 +36,7 @@ def list(table, can_insert):
     singular_table = singularize(table)
     print("can_insert ", can_insert)
 
-    return render_template("table.html", table=table.title(), headers=headers, rows=rows, can_insert=can_insert, singular_table=singular_table)
+    return render_template("table.html", table_title=table.title(), table=table,  headers=headers, rows=rows, can_insert=can_insert, singular_table=singular_table)
 
 def create(table, form):
     print(f"form {form}")
@@ -72,28 +72,7 @@ def welcome():
             rows += f"<td><a href=\"/{field}\">{field}</a></td>"
         rows += "</tr>"
     cursor.close()
-    return render_template("table.html", table="Tables", headers=headers, rows=rows)
-
-# @app.route("/students")
-# def students():
-#     cursor = mysql.connection.cursor()
-#     query = ("SELECT * from flask.students;")
-#     cursor.execute(query)
-#     print("cursor.description ", cursor.description)
-#     headers = ""
-#     for field in cursor.description:
-#         column_title = field[0].title().replace("_"," ")
-#         column_title = regex_id.sub("ID", column_title)
-#         headers += f"<th>{column_title}</th>"
-#     rows = ""
-#     for fields in cursor:
-#         rows += "<tr>"
-#         for field in fields:
-#             rows += f"<td>{field}</td>"
-#         rows += "</tr>"
-#     cursor.close()
-
-#     return render_template("table.html", table="Students", headers=headers, rows=rows)
+    return render_template("table.html", table_title="Tables", headers=headers, rows=rows)
 
 # https://stackoverflow.com/questions/14023864/flask-url-route-route-all-other-urls-to-some-function
 # under construction:  pull table name from url

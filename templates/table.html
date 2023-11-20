@@ -2,12 +2,12 @@
     <meta http-equiv="refresh" content="3" >
     <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/dbtable.css') }}">
     <title>
-        Happy Trails: {{table}}
+        Happy Trails: {{table_title}}
     </title>
 </head>
 <body>
     <h1>
-        {{table}}
+        {{table_title}}
     </h1>
     {% if can_insert %}
         <h2>
