@@ -3,12 +3,17 @@
     <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/dbtable.css') }}">
     <title>
         Happy Trails: {{table}}
-    </title>    
+    </title>
 </head>
 <body>
     <h1>
         {{table}}
     </h1>
+    {% if can_insert %}
+        <h2>
+            <a href="/{{table}}/new">new {{singular_table}}</a>
+        </h2>
+    {% endif %}
     <table id="dbtable">
         <tr>
             {{headers|safe}}
