@@ -15,6 +15,11 @@ app.config['MYSQL_PASSWORD'] = 'my-secret-pw'
 app.config['MYSQL_DB'] = 'flask'
 mysql = MySQL(app)
 
+def entitle(str):
+    title = str.title().replace("_"," ")
+    return regex_id.sub("ID", title)
+
+
 def list(table, can_insert):
     cursor = mysql.connection.cursor()
     query = (f"SELECT * from flask.{table};")
@@ -39,7 +44,24 @@ def list(table, can_insert):
     return render_template("table.html", table_title=table.title(), table=table,  headers=headers, rows=rows, can_insert=can_insert, singular_table=singular_table)
 
 def new_record_form(table):
-    return render_template("new.html", table=table, inputs='<input id="first_name" name="first_name" type="text"><br><br>')
+    cursor = mysql.connection.cursor()
+    select_columns = f"""
+    SELECT column_name, data_type, is_nullable, character_maximum_length
+    FROM   information_schema.columns
+    WHERE  table_schema = 'flask' AND table_name = '{table}';"""
+    cursor.execute(select_columns)
+    inputs = ""
+    for row in cursor:
+        print (f"row {row}")
+        if row[0].lower() == 'id':
+            continue
+        column_name = row[0]
+        data_type = row[1]
+        print(f"column_name {column_name}  data_type {data_type}")
+        inputs += f'<label for="{column_name}">{entitle(column_name)}:</label><br>'
+        inputs += f'<input id="{column_name}" name="{column_name}" type="text"><br><br>'
+
+    return render_template("new.html", table=table, inputs=inputs)
 
 def create(table, form):
     print(f"form {form}")
