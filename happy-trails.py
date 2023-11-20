@@ -60,8 +60,7 @@ def new_record_form(table):
         print(f"column_name {column_name}  data_type {data_type}")
         inputs += f'<label for="{column_name}">{entitle(column_name)}:</label><br>'
         inputs += f'<input id="{column_name}" name="{column_name}" type="text"><br><br>'
-
-    return render_template("new.html", table=table, inputs=inputs)
+    return render_template("new.html", table=table, table_title=entitle(singularize(table)), inputs=inputs)
 
 def create(table, form):
     print(f"form {form}")
