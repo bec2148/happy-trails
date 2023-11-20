@@ -51,8 +51,9 @@ def create(table, form):
     cursor = mysql.connection.cursor()
     ret = cursor.execute(insert)
     print(f"ret {ret}")
-    cursor.close
-    return redirect(url_for(""))
+    mysql.connection.commit()
+    cursor.close()
+    return redirect("/students")
 
 @app.route("/")
 def welcome():
