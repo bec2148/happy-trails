@@ -1,10 +1,9 @@
-from flask import Flask,render_template, request, flash, redirect
+from flask import Flask,render_template, request, flash, redirect, url_for
 # ...
 # https://hevodata.com/learn/flask-mysql/
 from flask_mysqldb import MySQL
 from pattern.text.en import singularize
 import re
-
 
 regex_id = re.compile(r"Id$")
 
@@ -20,7 +19,6 @@ def list(table, can_insert):
     cursor = mysql.connection.cursor()
     query = (f"SELECT * from flask.{table};")
     cursor.execute(query)
-    # print("cursor.description ", cursor.description)
     # cursor.description  (('id', 8, 2, 20, 20, 0, 0), ('first_name', 253, 11, 300, 300, 0, 1), ('last_name', 253, 13, 300, 300, 0, 1)
     headers = ""
     for field in cursor.description:
@@ -43,29 +41,18 @@ def list(table, can_insert):
 def create(table, form):
     print(f"form {form}")
 
-
-    title = form['first_name']
-    content = form['last_name']
-    print(f"title {title}  content {content}")
-
-    if not title:
-        flash('Title is required!')
-    elif not content:
-        flash('Content is required!')
-
-
-    return list(table, can_insert=True)
-
-
-    columns = [field.name for field in form]
-    values = [field.data for field in form]
+    columns = form.keys()
+    values = form.values()
     print(f"columns {columns}  values {values}")
-    insert = "INSERT INTO flask.{{table}} ({{','.join(columns)}}) VALUES ({{','.join(values)}})"
+    columns_str = ",".join(columns)
+    values_str = "'" + "','".join(values) + "'"
+    insert = f"INSERT INTO flask.{table} ({columns_str}) VALUES ({values_str})"
+    print (f"insert query {insert}")
     cursor = mysql.connection.cursor()
     ret = cursor.execute(insert)
     print(f"ret {ret}")
     cursor.close
-    ### redirect
+    return redirect(url_for(""))
 
 @app.route("/")
 def welcome():
