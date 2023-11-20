@@ -38,6 +38,9 @@ def list(table, can_insert):
 
     return render_template("table.html", table_title=table.title(), table=table,  headers=headers, rows=rows, can_insert=can_insert, singular_table=singular_table)
 
+def new_record_form(table):
+    return render_template("new.html", table=table, inputs='<input id="first_name" name="first_name" type="text"><br><br>')
+
 def create(table, form):
     print(f"form {form}")
 
@@ -75,7 +78,6 @@ def welcome():
     return render_template("table.html", table_title="Tables", headers=headers, rows=rows)
 
 # https://stackoverflow.com/questions/14023864/flask-url-route-route-all-other-urls-to-some-function
-# under construction:  pull table name from url
 @app.route('/<first>', methods = ['POST', 'GET'])
 @app.route('/<first>/<path:rest>', methods = ['POST', 'GET'])
 def fallback(first=None, rest=None):
@@ -83,8 +85,6 @@ def fallback(first=None, rest=None):
     if rest is None:
         return list(first, can_insert=True)
     if rest == "new":
-        return render_template("new.html", table=first)
+        return new_record_form(first)
     if rest == "create" and request.method == 'POST':
         return create(first, request.form)
-
-
