@@ -5,6 +5,10 @@ from flask_mysqldb import MySQL
 from pattern.text.en import singularize
 import re
 
+# feather icons personalized
+DELETE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="24" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x-circle"><circle cx="12" cy="12" r="10" color="##00FF00"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="24" viewBox="0 0 24 24" fill="#f3cc76" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
+
 regex_id = re.compile(r"Id$")
 
 app = Flask(__name__)
@@ -19,27 +23,42 @@ def entitle(str):
     title = str.title().replace("_"," ")
     return regex_id.sub("ID", title)
 
+def delete(table, id):
+    print("About to delete!!!!")
+    cursor = mysql.connection.cursor()
+    query = (f"DELETE FROM flask.{table} WHERE id = {id};")
+    cursor.execute(query)    
+    mysql.connection.commit()
+    cursor.close()
+    print("about to redirect!!!!!")
+    return redirect("/students")
 
 def list(table, can_insert):
     cursor = mysql.connection.cursor()
-    query = (f"SELECT * from flask.{table};")
+    query = (f"SELECT * FROM flask.{table};")
     cursor.execute(query)
     # cursor.description  (('id', 8, 2, 20, 20, 0, 0), ('first_name', 253, 11, 300, 300, 0, 1), ('last_name', 253, 13, 300, 300, 0, 1)
+    editable = True if cursor.description[0][0].lower() == "id" else False
     headers = ""
     for field in cursor.description:
         column_title = field[0].title().replace("_"," ")
         column_title = regex_id.sub("ID", column_title)
         headers += f"<th>{column_title}</th>"
+    if editable:
+        headers += "<th></th>"
     rows = ""
     for fields in cursor:
+        id = None
         rows += "<tr>"
         for field in fields:
+            id = field if id is None else id
             rows += f"<td>{field}</td>"
-        rows += "</tr>"
+        href = f"/{table}/{id}/delete"
+        if editable:
+            rows += f"<td>{EDIT_ICON} <a href=\"{href}\">{DELETE_ICON}</a></tc></tr>"
     cursor.close()
     # https://stackoverflow.com/questions/31387905/converting-plural-to-singular-in-a-text-file-with-python
     singular_table = singularize(table)
-    print("can_insert ", can_insert)
 
     return render_template("table.html", table_title=table.title(), table=table,  headers=headers, rows=rows, can_insert=can_insert, singular_table=singular_table)
 
@@ -60,6 +79,7 @@ def new_record_form(table):
         print(f"column_name {column_name}  data_type {data_type}")
         inputs += f'<label for="{column_name}">{entitle(column_name)}:</label><br>'
         inputs += f'<input id="{column_name}" name="{column_name}" type="text"><br><br>'
+    cursor.close()
     return render_template("new.html", table=table, table_title=entitle(singularize(table)), inputs=inputs)
 
 def create(table, form):
@@ -99,6 +119,7 @@ def welcome():
     return render_template("table.html", table_title="Tables", headers=headers, rows=rows)
 
 # https://stackoverflow.com/questions/14023864/flask-url-route-route-all-other-urls-to-some-function
+# https://guides.rubyonrails.org/routing.html#crud-verbs-and-actions
 @app.route('/<first>', methods = ['POST', 'GET'])
 @app.route('/<first>/<path:rest>', methods = ['POST', 'GET'])
 def fallback(first=None, rest=None):
@@ -109,3 +130,6 @@ def fallback(first=None, rest=None):
         return new_record_form(first)
     if rest == "create" and request.method == 'POST':
         return create(first, request.form)
+    if rest[-6:].lower() == "delete":
+        id = int(rest[:-7])
+        return delete(first, id)
