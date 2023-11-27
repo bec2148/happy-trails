@@ -1,0 +1,15 @@
+<head>
+  <title>
+    Happy Trails: UPDATE {{table_title}} {id}:
+  </title>
+</head>
+<body>
+  <h1>
+  Edit {{table_title}}:
+  </h1>
+  <!-- https://www.digitalocean.com/community/tutorials/how-to-use-web-forms-in-a-flask-application -->
+  <form action={{action}} method="POST">
+    {{inputs|safe}}
+    <input type="submit" value="Submit">
+  </form>
+</body>
