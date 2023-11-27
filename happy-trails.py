@@ -132,8 +132,14 @@ def update(table, id, form):
 
 def create(table, form):
     print(f"form {form}")
-    columns = form.keys()
-    values = form.values()
+    columns = []
+    values = []
+    for key, value in form.items():
+        if value is None or len(value) == 0:
+            continue
+        value = value.replace("'", "''")
+        columns.append(key)
+        values.append(value)
     print(f"columns {columns}  values {values}")
     columns_str = ",".join(columns)
     values_str = "'" + "','".join(values) + "'"
