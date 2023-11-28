@@ -1,0 +1,22 @@
+<head>
+    <meta http-equiv="refresh" content="3" >
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/dbtable.css') }}">
+    <title>
+        Happy Trails: {{page_title}} {{id}}
+    </title>
+</head>
+<body>
+    {% for table in tables %}
+        <div>
+            <h1>
+                {{table_titles[loop.index0]}}
+            </h1>
+            <table id="dbtable">
+                <tr>
+                    {{headersz[loop.index0]|safe}}
+                </tr>
+                {{rowsz[loop.index0]|safe}}
+            </table>
+        </div>
+    {% endfor %}
+</body>

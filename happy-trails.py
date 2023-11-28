@@ -31,6 +31,65 @@ def delete(table, id):
     cursor.close()
     return redirect(f"/{table}")
 
+def multi_list(table, id):
+    cursor = mysql.connection.cursor()
+    query = (f"SELECT * FROM flask.{table} WHERE id = {id};")
+    print(f"query [{query}]")
+    cursor.execute(query)
+    headers = ""
+    for field in cursor.description:
+        column_title = field[0].title().replace("_"," ")
+        column_title = regex_id.sub("ID", column_title)
+        headers += f"<th>{column_title}</th>"
+    rows = ""
+    for fields in cursor:
+        id = None
+        rows += "<tr>"
+        for field in fields:
+            id = field if id is None else id
+            rows += f"<td>{field}</td>"
+    cursor.close()
+    singular_table = singularize(table)
+    table_titles=[entitle(table)]
+    tables = [table]
+    headersz = [headers]
+    rowsz = [rows]
+    singular_tablesz = [singular_table]
+    cursor = mysql.connection.cursor()
+    query = (f"SELECT table_name FROM information_schema.views WHERE table_schema='flask' AND table_name like '%{table}%';")
+    print(f"query [{query}]")
+    cursor.execute(query)
+    view_names_recordset = cursor.fetchall()
+    cursor.close()
+    list_tuples_view_names = [*view_names_recordset]
+    view_names = [x[0] for x in list_tuples_view_names]
+    print (list_tuples_view_names, view_names)
+    for view_name in view_names:
+        cursor = mysql.connection.cursor()
+        query = (f"SELECT * FROM flask.{view_name} WHERE {singular_table}_id = {id};")
+        print(f"query [{query}]")
+        cursor.execute(query)
+        headers = ""
+        for field in cursor.description:
+            column_title = field[0].title().replace("_"," ")
+            column_title = regex_id.sub("ID", column_title)
+            headers += f"<th>{column_title}</th>"
+        rows = ""
+        for fields in cursor:
+            id = None
+            rows += "<tr>"
+            for field in fields:
+                id = field if id is None else id
+                rows += f"<td>{field}</td>"
+        cursor.close()
+        singular_view_name= singularize(view_name)
+        table_titles.append(entitle(view_name))
+        tables.append(view_name)
+        headersz.append(headers)
+        rowsz.append(rows)
+        singular_tablesz.append(singular_view_name)
+    return render_template("tables.html", id=id, page_title=entitle(table), table_titles=table_titles, tables=tables,  headersz=headersz, rowsz=rowsz, singular_tablesz=singular_tablesz)
+
 def list(table, can_insert):
     cursor = mysql.connection.cursor()
     query = (f"SELECT * FROM flask.{table};")
@@ -198,3 +257,6 @@ def fallback(first=None, rest=None):
     if rest[-4:].lower() == "edit":
         id = int(rest[:-5])
         return edit_record_form(first, id)
+    if rest[-4:].lower() == "info":
+        id = int(rest[:-5])
+        return multi_list(first, id)
