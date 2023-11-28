@@ -1,8 +1,8 @@
-from flask import Flask,render_template, request, flash, redirect, url_for
-# ...
+from flask import Flask,render_template, request, flash, redirect, send_from_directory
 # https://hevodata.com/learn/flask-mysql/
 from flask_mysqldb import MySQL
 from pattern.text.en import singularize
+import os
 import re
 
 # feather icons personalized
@@ -29,11 +29,12 @@ def delete(table, id):
     cursor.execute(query)    
     mysql.connection.commit()
     cursor.close()
-    return redirect("/students")
+    return redirect(f"/{table}")
 
 def list(table, can_insert):
     cursor = mysql.connection.cursor()
     query = (f"SELECT * FROM flask.{table};")
+    print(f"query [{query}]")
     cursor.execute(query)
     # cursor.description  (('id', 8, 2, 20, 20, 0, 0), ('first_name', 253, 11, 300, 300, 0, 1), ('last_name', 253, 13, 300, 300, 0, 1)
     editable = True if cursor.description[0][0].lower() == "id" else False
@@ -58,7 +59,7 @@ def list(table, can_insert):
     cursor.close()
     # https://stackoverflow.com/questions/31387905/converting-plural-to-singular-in-a-text-file-with-python
     singular_table = singularize(table)
-    return render_template("table.html", table_title=table.title(), table=table,  headers=headers, rows=rows, can_insert=can_insert, singular_table=singular_table)
+    return render_template("table.html", table_title=table.title(), table=table,  headers=headers, rows=rows, can_insert=editable, singular_table=singular_table)
 
 def edit_record_form(table, id):
     cursor = mysql.connection.cursor()
@@ -85,7 +86,7 @@ def edit_record_form(table, id):
         readonly = "readonly" if column_name == "id" else ""
         inputs += f'<label for="{column_name}">{entitle(column_name)}:</label><br>'
         inputs += f'<input id="{column_name}" name="{column_name}" type="text" value={value} {readonly}><br><br>'
-    action = f"/students/{id}/update"
+    action = f"/{table}/{id}/update"
     print ("action {action}")
     return render_template("edit.html", table=table, table_title=entitle(singularize(table)), inputs=inputs, id=id, action=action)
 
@@ -128,7 +129,7 @@ def update(table, id, form):
     print(f"ret {ret}")
     mysql.connection.commit()
     cursor.close()
-    return redirect("/students")
+    return redirect(f"/{table}")
 
 def create(table, form):
     print(f"form {form}")
@@ -150,7 +151,7 @@ def create(table, form):
     print(f"ret {ret}")
     mysql.connection.commit()
     cursor.close()
-    return redirect("/students")
+    return redirect(f"/{table}")
 
 @app.route("/")
 def welcome():
@@ -170,6 +171,11 @@ def welcome():
         rows += "</tr>"
     cursor.close()
     return render_template("table.html", table_title="Tables", headers=headers, rows=rows)
+
+@app.route('/favicon.ico')
+def favicon():
+    print (f"app.root_path {app.root_path}   os.path.join(app.root_path, 'static') {os.path.join(app.root_path, 'static')}")
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'HappyTrails.ico')
 
 # https://stackoverflow.com/questions/14023864/flask-url-route-route-all-other-urls-to-some-function
 # https://guides.rubyonrails.org/routing.html#crud-verbs-and-actions
