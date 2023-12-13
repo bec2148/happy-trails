@@ -98,8 +98,11 @@ def list(table, can_insert):
     # cursor.description  (('id', 8, 2, 20, 20, 0, 0), ('first_name', 253, 11, 300, 300, 0, 1), ('last_name', 253, 13, 300, 300, 0, 1)
     editable = True if cursor.description[0][0].lower() == "id" else False
     headers = ""
-    for field in cursor.description:
+    link_on_id = False
+    for idx, field in enumerate(cursor.description):
         column_title = field[0].title().replace("_"," ")
+        if idx == 0 and field[0] == "id":
+            link_on_id = True
         column_title = regex_id.sub("ID", column_title)
         headers += f"<th>{column_title}</th>"
     if editable:
@@ -108,9 +111,12 @@ def list(table, can_insert):
     for fields in cursor:
         id = None
         rows += "<tr>"
-        for field in fields:
+        for idx, field in enumerate(fields):
             id = field if id is None else id
-            rows += f"<td>{field}</td>"
+            if link_on_id and idx == 0:
+                rows += f"<td><a href=\"/{table}/{field}/info\">{field}</a></td>"
+            else:
+                rows += f"<td>{field}</td>"
         href_edit = f"/{table}/{id}/edit"
         href_delete = f"/{table}/{id}/delete"
         if editable:
