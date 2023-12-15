@@ -26,12 +26,43 @@ def entitle(str):
 def delete(table, id):
     cursor = mysql.connection.cursor()
     query = (f"DELETE FROM flask.{table} WHERE id = {id};")
-    cursor.execute(query)    
+    cursor.execute(query)
     mysql.connection.commit()
     cursor.close()
     return redirect(f"/{table}")
 
+def name_sql_from_table(table_name):
+    """Generate the SQL to request a name field from table table_name
+
+    Args:
+        table_name: the number to get the square root of.
+    Returns:
+        SQL to query the name field (if any) from table table_name.
+            Or empty string if no relevant name field exists.
+    """
+    cursor = mysql.connection.cursor()
+    query = """SELECT column_name FROM information_schema.columns
+                WHERE table_schema = 'flask' AND table_name = '{table_name}' AND Lower(column_name) LIKE '%name%';
+                """
+    print(f"query [{query}]")
+    cursor.execute(query)
+    if len(cursor.description) == 0:
+        return ""
+    singular_table = singularize(table_name)
+    try:
+        iname = (i for i,v in enumerate(cursor.description) if v[0].lower() == 'name')
+        return f", {table_name}.name as \"{singular_table}_name\" "
+    except StopIteration:
+        pass
+    column_names = cursor.fetchall()
+    table_column_names = list(map(lambda column_name: f"{table_name}.{column_name}", column_names))
+    cursor.close()
+    name_columns = ", ".join(table_column_names)
+    return f", concat({name_columns}) as \"{singular_table}_name\" "
+
 def multi_list(table, id):
+    """ display multiple tables for the item of id <id> of table <table>
+    """
     cursor = mysql.connection.cursor()
     query = (f"SELECT * FROM flask.{table} WHERE id = {id};")
     print(f"query [{query}]")
@@ -54,7 +85,6 @@ def multi_list(table, id):
     tables = [table]
     headersz = [headers]
     rowsz = [rows]
-    singular_tablesz = [singular_table]
     cursor = mysql.connection.cursor()
     query = (f"SELECT table_name FROM information_schema.views WHERE table_schema='flask' AND table_name like '%{table}%';")
     print(f"query [{query}]")
@@ -82,13 +112,49 @@ def multi_list(table, id):
                 id = field if id is None else id
                 rows += f"<td>{field}</td>"
         cursor.close()
-        singular_view_name= singularize(view_name)
         table_titles.append(entitle(view_name))
         tables.append(view_name)
         headersz.append(headers)
         rowsz.append(rows)
-        singular_tablesz.append(singular_view_name)
-    return render_template("tables.html", id=id, page_title=entitle(table), table_titles=table_titles, tables=tables,  headersz=headersz, rowsz=rowsz, singular_tablesz=singular_tablesz)
+
+    # iterate through tables that have a foreign key to this table.
+    # ALSO:  includes where *that* table has a foreign key to *another* table
+    # If FK2 is popoulated, then the table is a join table.
+    # if FK2 is null, then it's just a table.
+    query = f"""SELECT cu1.table_name, cu1.column_name "FK", cu1.referenced_table_name "FOREIGN_TABLE", cu1.referenced_column_name "FOREIGN_ID",
+                    cu2.column_name "FK2", cu2.referenced_table_name "FOREIGN_TABLE2", cu2.referenced_column_name "FOREIGN_ID2"
+                FROM   information_schema.key_column_usage cu1
+                    LEFT JOIN (SELECT * FROM information_schema.key_column_usage
+                                WHERE referenced_table_name IS NOT NULL) cu2
+                            ON cu1.table_name = cu2.table_name AND cu1.referenced_table_name <> cu2.referenced_table_name
+                WHERE  cu1.table_schema = 'flask' AND cu1.referenced_table_name = '{table}';"""
+    print(f"query [{query}]")
+    cursor = mysql.connection.cursor()
+    cursor.execute(query)
+    table_names = []
+    fks = []
+    foreign_tables = []
+    foreign_ids = []
+    fk2s = []
+    foreign_table2s = []
+    foreign_id2s = []
+    for fields in cursor:
+        print(f"fields {fields}")
+        table_names.append(fields[0])
+        fks.append(fields[1])
+        foreign_tables.append(fields[2])
+        foreign_ids.append(fields[3])
+        fk2s.append(fields[4])
+        foreign_table2s.append(fields[5])
+        foreign_id2s.append(fields[6])
+    cursor.close()
+    for i in range(len(table_names)):
+        table_name = table_names[i]
+        name_sql = name_sql_from_table(table_name)
+
+
+
+    return render_template("tables.html", id=id, page_title=entitle(table), table_titles=table_titles, tables=tables,  headersz=headersz, rowsz=rowsz)
 
 def list(table, can_insert):
     cursor = mysql.connection.cursor()
