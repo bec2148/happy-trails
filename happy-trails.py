@@ -199,9 +199,8 @@ def list(table, can_insert):
 def edit_record_form(table, id):
     cursor = mysql.connection.cursor()
     select_columns = f"""
-    SELECT column_name, data_type, is_nullable, character_maximum_length
-    FROM   information_schema.columns
-    WHERE  table_schema = 'flask' AND table_name = '{table}';"""
+    SELECT column_name, data_type, is_nullable, character_maximum_length FROM   information_schema.columns
+    WHERE  table_schema = 'flask' AND table_name = '{table}' ORDER BY ORDINAL_POSITION;;"""
     cursor.execute(select_columns)
     inputs = ""
     columns = []
@@ -228,9 +227,8 @@ def edit_record_form(table, id):
 def new_record_form(table):
     cursor = mysql.connection.cursor()
     select_columns = f"""
-    SELECT column_name, data_type, is_nullable, character_maximum_length
-    FROM   information_schema.columns
-    WHERE  table_schema = 'flask' AND table_name = '{table}';"""
+    SELECT column_name, data_type, is_nullable, character_maximum_length FROM   information_schema.columns
+    WHERE  table_schema = 'flask' AND table_name = '{table}' ORDER BY ORDINAL_POSITION;"""
     cursor.execute(select_columns)
     inputs = ""
     for row in cursor:
