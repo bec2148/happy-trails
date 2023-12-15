@@ -41,7 +41,7 @@ def name_sql_from_table(table_name):
             Or empty string if no relevant name field exists.
     """
     cursor = mysql.connection.cursor()
-    query = """SELECT column_name FROM information_schema.columns
+    query = f"""SELECT column_name FROM information_schema.columns
                 WHERE table_schema = 'flask' AND table_name = '{table_name}' AND Lower(column_name) LIKE '%name%';
                 """
     print(f"query [{query}]")
@@ -50,15 +50,15 @@ def name_sql_from_table(table_name):
         return ""
     singular_table = singularize(table_name)
     try:
-        iname = (i for i,v in enumerate(cursor.description) if v[0].lower() == 'name')
-        return f", {table_name}.name as \"{singular_table}_name\" "
+        iname = next(i for i,v in enumerate(cursor.description) if v[0].lower() == 'name')
+        return f" {table_name}.name as \"{singular_table}_name\", "
     except StopIteration:
         pass
     column_names = cursor.fetchall()
-    table_column_names = list(map(lambda column_name: f"{table_name}.{column_name}", column_names))
+    table_column_names = list(map(lambda column_name: f"{table_name}.{column_name[0]}", column_names))
     cursor.close()
-    name_columns = ", ".join(table_column_names)
-    return f", concat({name_columns}) as \"{singular_table}_name\" "
+    name_columns = ", ' ', ".join(table_column_names)
+    return f" concat({name_columns}) as \"{singular_table}_name\", "
 
 def html_from_query(query):
     cursor = mysql.connection.cursor()
@@ -152,15 +152,31 @@ def multi_list(table, id):
         foreign_table2s.append(fields[5])
         foreign_id2s.append(fields[6])
     cursor.close()
+    base_table_name_sql = name_sql_from_table(table)
     for i in range(len(table_names)):
         table_name = table_names[i]
-        name_sql = name_sql_from_table(table_name)
+        fk = fks[i]
+        foreign_table = foreign_tables[i]
+        foreign_id = foreign_ids[i]
+        fk2 = fk2s[i]
+        print(f"fk2 {fk2}   fk2 is None {fk2 is None}")
+        if fk2 is None:
+            # easy.  Just Students.id, students' name, middle table all fields
+            query = f"select {base_table_name_sql} {table_name}.* from flask.{table_name} join flask.{table} on flask.{table_name}.{fk} = {table}.id where {table_name}.{fk} = {id};"
+            headers, rows = html_from_query(query)
+            table_titles.append(entitle(table_name))
+            tables.append(table_name)
+            headersz.append(headers)
+            rowsz.append(rows)
+        else:
+            foreign_table2 = foreign_tables[i]
+            foreign_id2 = foreign_ids[i]
 
 
-
+    ### Test remove tables as a parameter
     return render_template("tables.html", id=id, page_title=entitle(table), table_titles=table_titles, tables=tables,  headersz=headersz, rowsz=rowsz)
 
-def list(table, can_insert):
+def show(table, can_insert):
     cursor = mysql.connection.cursor()
     query = (f"SELECT * FROM flask.{table};")
     print(f"query [{query}]")
@@ -317,7 +333,7 @@ def favicon():
 def fallback(first=None, rest=None):
     print(f"first {first}  rest {rest}  request.method=='POST' {request.method=='POST'}")
     if rest is None:
-        return list(first, can_insert=True)
+        return show(first, can_insert=True)
     if rest == "new":
         return new_record_form(first)
     if rest == "create" and request.method == 'POST':
