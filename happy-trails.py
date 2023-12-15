@@ -60,6 +60,25 @@ def name_sql_from_table(table_name):
     name_columns = ", ".join(table_column_names)
     return f", concat({name_columns}) as \"{singular_table}_name\" "
 
+def html_from_query(query):
+    cursor = mysql.connection.cursor()
+    print(f"query [{query}]")
+    cursor.execute(query)
+    headers = ""
+    for field in cursor.description:
+        column_title = field[0].title().replace("_"," ")
+        column_title = regex_id.sub("ID", column_title)
+        headers += f"<th>{column_title}</th>"
+    rows = ""
+    for fields in cursor:
+        id = None
+        rows += "<tr>"
+        for field in fields:
+            id = field if id is None else id
+            rows += f"<td>{field}</td>"
+    cursor.close()
+    return (headers, rows)
+
 def multi_list(table, id):
     """ display multiple tables for the item of id <id> of table <table>
     """
@@ -95,23 +114,8 @@ def multi_list(table, id):
     view_names = [x[0] for x in list_tuples_view_names]
     print (list_tuples_view_names, view_names)
     for view_name in view_names:
-        cursor = mysql.connection.cursor()
         query = (f"SELECT * FROM flask.{view_name} WHERE {singular_table}_id = {id};")
-        print(f"query [{query}]")
-        cursor.execute(query)
-        headers = ""
-        for field in cursor.description:
-            column_title = field[0].title().replace("_"," ")
-            column_title = regex_id.sub("ID", column_title)
-            headers += f"<th>{column_title}</th>"
-        rows = ""
-        for fields in cursor:
-            id = None
-            rows += "<tr>"
-            for field in fields:
-                id = field if id is None else id
-                rows += f"<td>{field}</td>"
-        cursor.close()
+        headers, rows = html_from_query(query)
         table_titles.append(entitle(view_name))
         tables.append(view_name)
         headersz.append(headers)
