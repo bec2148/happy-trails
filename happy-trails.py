@@ -35,7 +35,7 @@ def name_sql_from_table(table_name):
     """Generate the SQL to request a name field from table table_name
 
     Args:
-        table_name: the number to get the square root of.
+        table_name: table to get name fields from.
     Returns:
         SQL to query the name field (if any) from table table_name.
             Or empty string if no relevant name field exists.
@@ -156,6 +156,7 @@ def multi_list(table, id):
     for i in range(len(table_names)):
         table_name = table_names[i]
         fk = fks[i]
+        ### TODO: test if you can remove variables foreign_table and foreign_id and simplify above query
         foreign_table = foreign_tables[i]
         foreign_id = foreign_ids[i]
         fk2 = fk2s[i]
@@ -171,10 +172,9 @@ def multi_list(table, id):
         else:
             foreign_table2 = foreign_tables[i]
             foreign_id2 = foreign_ids[i]
+            ### TODO: Implement rest of jointable logic
 
-
-    ### Test remove tables as a parameter
-    return render_template("tables.html", id=id, page_title=entitle(table), table_titles=table_titles, tables=tables,  headersz=headersz, rowsz=rowsz)
+    return render_template("tables.html", id=id, page_title=entitle(table), table_titles=table_titles, headersz=headersz, rowsz=rowsz)
 
 def show(table, can_insert):
     cursor = mysql.connection.cursor()
